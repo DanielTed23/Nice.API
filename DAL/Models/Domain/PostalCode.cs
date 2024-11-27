@@ -10,5 +10,9 @@ namespace DAL.Models.Domain
     {
         public int PostalCodeId {  get; set; }
         public string Name { get; set; }
+
+
+        // Navigation Property til CinemaAddress
+        public ICollection<CinemaAddress> CinemaAddresses { get; set; } = new List<CinemaAddress>();
     }
 }

@@ -17,5 +17,10 @@ namespace DAL.Models.Domain
         public DateOnly ReleaseDate { get; set; }
         public List<Genre> Genres { get; set; } = new List<Genre>();
 
+        public int CinemaHallId { get; set; }
+
+        
+        public CinemaHall CinemaHall { get; set; } = null!;
+
     }
 }
