@@ -11,8 +11,8 @@ namespace DAL.Models.Domain
         public int ScreeningId { get; set; } // Primær nøgle
         public int MovieId { get; set; } // Reference til filmen
         public int CinemaHallId { get; set; } // Reference til biografsalen
-        public DateTime StartTime { get; set; } // Starttidspunkt for visningen
-        public DateTime EndTime { get; set; } // Sluttidspunkt for visningen
+        public decimal StartTime { get; set; } // Starttidspunkt for visningen
+        public decimal EndTime { get; set; } // Sluttidspunkt for visningen
 
         // Navigation Properties
         public Movie Movie { get; set; } = null!;

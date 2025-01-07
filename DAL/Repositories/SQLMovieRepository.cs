@@ -60,7 +60,7 @@ namespace DAL.Repositories
             }
 
             existingMovie.Title = movie.Title;
-            existingMovie.DurationMinutes = movie.DurationMinutes;
+            existingMovie.Duration = movie.Duration;
             existingMovie.ReleaseDate = movie.ReleaseDate;
             existingMovie.Rating = movie.Rating;
             existingMovie.Genres = movie.Genres;

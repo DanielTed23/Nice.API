@@ -25,7 +25,7 @@ namespace DAL.Repositories
         public async Task<Genre?> GetByIdAsync(int id)
         {
             return await dbContext.Genres
-                         .FirstOrDefaultAsync(x => x.GenreID == id);
+                         .FirstOrDefaultAsync(x => x.GenreId == id);
 
 
         }

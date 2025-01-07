@@ -20,4 +20,4 @@ namespace DAL.Models.Domain
         public ICollection<CinemaHall> CinemaHalls { get; set; } = new List<CinemaHall>();
     }
 }
-}
+
