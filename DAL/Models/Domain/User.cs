@@ -17,5 +17,8 @@ namespace DAL.Models.Domain
         // Navigation Property
         public PostalCode PostalCode { get; set; }
         public int PostalCodeId { get; set; }
+
+
+        public ICollection<Payment> Payments { get; set; } = new List<Payment>();
     }
 }

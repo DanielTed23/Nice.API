@@ -3,38 +3,53 @@ using DAL.Repositories;
 using Microsoft.EntityFrameworkCore;
 using NZWalks.API.Mappings;
 
-
 var builder = WebApplication.CreateBuilder(args);
-// Video source: https://www.udemy.com/course/build-rest-apis-with-aspnet-core-web-api-entity-framework/learn/lecture/36980486#overview
-// Add services to the container.
 
+// Add services to the container
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Register DbContext with connection string
 builder.Services.AddDbContext<MyDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("ConnectionString")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("ConnectionString"))
+           .EnableDetailedErrors()
+           .EnableSensitiveDataLogging());// Register Repositories for Dependency Injection
+
 
 builder.Services.AddScoped<IUserRepository, SQLUserRepository>();
-builder.Services.AddScoped<IMovieRepository, SQLMovieRepository>();
+//builder.Services.AddScoped<IMovieRepository, SQLMovieRepository>();
 builder.Services.AddScoped<IPostalCodeRepository, SQLPostalCodeRepository>();
 builder.Services.AddScoped<IGenreRepository, SQLGenreRepository>();
+
+// Register AutoMapper profiles
 builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
+
+// Configure CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("MyAllowSpecificOrigins", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+app.UseCors("MyAllowSpecificOrigins");
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.Run();
