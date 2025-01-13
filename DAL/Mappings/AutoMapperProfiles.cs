@@ -20,7 +20,15 @@ namespace NZWalks.API.Mappings
             CreateMap<Genre, GenreDto>().ReverseMap();
 
             // Movie
-            CreateMap<Movie, MovieDto>().ReverseMap();
+            CreateMap<AddMovieRequestDto, Movie>()
+                 .ForMember(dest => dest.CinemaHall, opt => opt.Ignore()) // Ignorer CinemaHall navigation
+                 .ForMember(dest => dest.Genres, opt => opt.Ignore()); // Ignorer Genres navigation
+
+            // Mapping for Movie -> MovieDto
+            CreateMap<Movie, MovieDto>();
+
+            CreateMap<CinemaHall, CinemaHallDto>();
+            CreateMap<AddCinemaHallDto, CinemaHall>();
         }
     }
 }

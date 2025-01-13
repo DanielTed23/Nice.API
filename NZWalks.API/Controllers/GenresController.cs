@@ -23,12 +23,11 @@ namespace Cinema.API.Controllers
         // GET: /api/genres
 
         [HttpGet]
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var genreDomainModel = await genreRepository.GetAllAsync();
-
-            // Map Domain Model to DTO
-            return Ok(mapper.Map<List<GenreDto>>(genreDomainModel));
+            var genreDomainModels = await genreRepository.GetAllAsync();
+            return Ok(mapper.Map<List<GenreDto>>(genreDomainModels));
         }
 
         // Get Genre By Id

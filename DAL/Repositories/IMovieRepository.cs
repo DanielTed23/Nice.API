@@ -14,5 +14,7 @@ namespace DAL.Repositories
         Task<Movie?> GetByIdAsync(int id);
         Task<Movie?> UpdateAsync(int id, Movie movie);
         Task<Movie?> DeleteAsync(int id);
+
+        Task<List<Genre>> GetGenresByIdsAsync(List<int> genreIds);
     }
 }
