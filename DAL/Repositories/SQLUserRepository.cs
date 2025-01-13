@@ -66,5 +66,10 @@ namespace DAL.Repositories
             await dbContext.SaveChangesAsync();
             return existingUser;
         }
+
+        public async Task<User?> GetByEmailAsync(string email)
+        {
+            return await dbContext.Users.FirstOrDefaultAsync(x => x.Email == email);
+        }
     }
 }

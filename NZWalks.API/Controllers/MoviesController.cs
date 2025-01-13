@@ -4,6 +4,8 @@ using DAL.Models.DTO;
 using DAL.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Cinema.API.Controllers
 {
@@ -11,92 +13,171 @@ namespace Cinema.API.Controllers
     [ApiController]
     public class MoviesController : ControllerBase
     {
-        private readonly IMapper mapper;
-        private readonly IMovieRepository movieRepository;
+        private readonly IMapper _mapper;
+        private readonly IMovieRepository _movieRepository;
+        private readonly ICinemaHallRepository _cinemaHallRepository;
 
-        public MoviesController(IMapper mapper, IMovieRepository movieRepository)
+        public MoviesController(IMapper mapper, IMovieRepository movieRepository, ICinemaHallRepository cinemaHallRepository)
         {
-            this.mapper = mapper;
-            this.movieRepository = movieRepository;
+            _mapper = mapper;
+            _movieRepository = movieRepository;
+            _cinemaHallRepository = cinemaHallRepository;
         }
-        // CREATE Movie
-        // POST: /api/movie
+
+        // CREATE Movie with Poster Upload and CinemaHallId
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] AddMovieRequestDto addMovieRequestDto)
+        public async Task<IActionResult> Create([FromForm] AddMovieRequestDto addMovieRequestDto, [FromForm] IFormFile? poster)
         {
-            // Map DTO to Domain Model
-            var movieDomainModel = mapper.Map<Movie>(addMovieRequestDto);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Validation errors occurred.", errors = ModelState });
+            }
 
-            await movieRepository.CreateAsync(movieDomainModel);
+            string? posterPath = null;
 
-            // Map Domain model to DTO
-            return Ok(mapper.Map<MovieDto>(movieDomainModel));
+            try
+            {
+                // Validate CinemaHallId
+                var cinemaHall = await _cinemaHallRepository.GetByIdAsync(addMovieRequestDto.CinemaHallId);
+                if (cinemaHall == null)
+                {
+                    return BadRequest(new { message = "Invalid CinemaHallId provided." });
+                }
+
+                // Save poster if uploaded
+                if (poster != null)
+                {
+                    var uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                    if (!Directory.Exists(uploadFolder))
+                    {
+                        Directory.CreateDirectory(uploadFolder);
+                    }
+
+                    posterPath = Path.Combine(uploadFolder, poster.FileName);
+                    using (var stream = new FileStream(posterPath, FileMode.Create))
+                    {
+                        await poster.CopyToAsync(stream);
+                    }
+                }
+
+                // Map DTO to Domain Model
+                var movieDomainModel = _mapper.Map<Movie>(addMovieRequestDto);
+                movieDomainModel.PosterPath = posterPath;
+
+                // Save movie to database
+                await _movieRepository.CreateAsync(movieDomainModel);
+
+                return Ok(_mapper.Map<MovieDto>(movieDomainModel));
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred.", details = ex.Message });
+            }
         }
 
-        // GET Movie
-        // GET: /api/movie
-
+        // GET Movies
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var moviesDomainModel = await movieRepository.GetAllAsync();
-
-            // Map Domain Model to DTO
-            return Ok(mapper.Map<List<MovieDto>>(moviesDomainModel));
+            try
+            {
+                var moviesDomainModel = await _movieRepository.GetAllAsync();
+                return Ok(_mapper.Map<List<MovieDto>>(moviesDomainModel));
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred.", details = ex.Message });
+            }
         }
 
         // Get Movie By Id
-        // GET; /api/movies/{id}
-        [HttpGet]
-        [Route("{id:int}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var movieDomainModel = await movieRepository.GetByIdAsync(id);
-
-            if (movieDomainModel == null)
+            try
             {
-                return NotFound();
+                var movieDomainModel = await _movieRepository.GetByIdAsync(id);
+
+                if (movieDomainModel == null)
+                {
+                    return NotFound(new { message = "Movie not found." });
+                }
+
+                return Ok(_mapper.Map<MovieDto>(movieDomainModel));
             }
-            // Map Domain Model to DTO
-            return Ok(mapper.Map<MovieDto>(movieDomainModel));
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred.", details = ex.Message });
+            }
         }
 
-        // Update Movie By Id
-        // PUT: /api/movies/{id}
-        [HttpPut]
-        [Route("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateMovieRequestDto updateMovieRequestDto)
+        // UPDATE Movie By Id with Poster
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromForm] UpdateMovieRequestDto updateMovieRequestDto, [FromForm] IFormFile? poster)
         {
-            // Map DTO to Domain Model
-            var movieDomainModel = mapper.Map<Movie>(updateMovieRequestDto);
-
-            movieDomainModel = await movieRepository.UpdateAsync(id, movieDomainModel);
-
-            if (movieDomainModel == null)
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                return BadRequest(ModelState);
             }
-            // Map Domain Model to DTO
 
-            return Ok(mapper.Map<MovieDto>(movieDomainModel));
+            try
+            {
+                var movieDomainModel = await _movieRepository.GetByIdAsync(id);
+
+                if (movieDomainModel == null)
+                {
+                    return NotFound(new { message = "Movie not found." });
+                }
+
+                // Update poster if uploaded
+                if (poster != null)
+                {
+                    var uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                    if (!Directory.Exists(uploadFolder))
+                    {
+                        Directory.CreateDirectory(uploadFolder);
+                    }
+
+                    var posterPath = Path.Combine(uploadFolder, poster.FileName);
+                    using (var stream = new FileStream(posterPath, FileMode.Create))
+                    {
+                        await poster.CopyToAsync(stream);
+                    }
+
+                    movieDomainModel.PosterPath = posterPath;
+                }
+
+                // Update data from DTO
+                _mapper.Map(updateMovieRequestDto, movieDomainModel);
+
+                await _movieRepository.UpdateAsync(id, movieDomainModel);
+
+                return Ok(_mapper.Map<MovieDto>(movieDomainModel));
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred.", details = ex.Message });
+            }
         }
 
-        // Delete Movie By Id
-        // DELETE: /api/movie/{id}
-        [HttpDelete]
-        [Route("{id:int}")]
+        // DELETE Movie By Id
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var deletedMovieDomainModel = await movieRepository.DeleteAsync(id);
-            if (deletedMovieDomainModel == null)
+            try
             {
-                return NotFound();
+                var deletedMovieDomainModel = await _movieRepository.DeleteAsync(id);
+                if (deletedMovieDomainModel == null)
+                {
+                    return NotFound(new { message = "Movie not found." });
+                }
+
+                return Ok(_mapper.Map<MovieDto>(deletedMovieDomainModel));
             }
-
-            return Ok(mapper.Map<MovieDto>(deletedMovieDomainModel));
-
-            // Map Domain Model to DTO
-
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred.", details = ex.Message });
+            }
         }
     }
 }

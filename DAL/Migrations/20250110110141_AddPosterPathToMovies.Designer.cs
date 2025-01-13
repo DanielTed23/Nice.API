@@ -4,6 +4,7 @@ using DAL.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DAL.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250110110141_AddPosterPathToMovies")]
+    partial class AddPosterPathToMovies
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -45,7 +48,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("PostalCodeId");
 
-                    b.ToTable("CinemaAddresses");
+                    b.ToTable("CinemaAddress");
                 });
 
             modelBuilder.Entity("DAL.Models.Domain.CinemaHall", b =>
@@ -68,10 +71,9 @@ namespace DAL.Migrations
 
                     b.HasKey("CinemaHallId");
 
-                    b.HasIndex("CinemaAddressId")
-                        .IsUnique();
+                    b.HasIndex("CinemaAddressId");
 
-                    b.ToTable("CinemaHalls");
+                    b.ToTable("CinemaHall");
                 });
 
             modelBuilder.Entity("DAL.Models.Domain.Genre", b =>
@@ -277,8 +279,8 @@ namespace DAL.Migrations
             modelBuilder.Entity("DAL.Models.Domain.CinemaHall", b =>
                 {
                     b.HasOne("DAL.Models.Domain.CinemaAddress", "CinemaAddress")
-                        .WithOne("CinemaHall")
-                        .HasForeignKey("DAL.Models.Domain.CinemaHall", "CinemaAddressId")
+                        .WithMany("CinemaHalls")
+                        .HasForeignKey("CinemaAddressId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -354,8 +356,7 @@ namespace DAL.Migrations
 
             modelBuilder.Entity("DAL.Models.Domain.CinemaAddress", b =>
                 {
-                    b.Navigation("CinemaHall")
-                        .IsRequired();
+                    b.Navigation("CinemaHalls");
                 });
 
             modelBuilder.Entity("DAL.Models.Domain.CinemaHall", b =>

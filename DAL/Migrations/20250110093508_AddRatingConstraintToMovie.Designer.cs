@@ -4,6 +4,7 @@ using DAL.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DAL.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250110093508_AddRatingConstraintToMovie")]
+    partial class AddRatingConstraintToMovie
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -45,7 +48,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("PostalCodeId");
 
-                    b.ToTable("CinemaAddresses");
+                    b.ToTable("CinemaAddress");
                 });
 
             modelBuilder.Entity("DAL.Models.Domain.CinemaHall", b =>
@@ -68,10 +71,9 @@ namespace DAL.Migrations
 
                     b.HasKey("CinemaHallId");
 
-                    b.HasIndex("CinemaAddressId")
-                        .IsUnique();
+                    b.HasIndex("CinemaAddressId");
 
-                    b.ToTable("CinemaHalls");
+                    b.ToTable("CinemaHall");
                 });
 
             modelBuilder.Entity("DAL.Models.Domain.Genre", b =>
@@ -89,6 +91,41 @@ namespace DAL.Migrations
                     b.HasKey("GenreId");
 
                     b.ToTable("Genres");
+                });
+
+            modelBuilder.Entity("DAL.Models.Domain.Movie", b =>
+                {
+                    b.Property<int>("MovieId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MovieId"));
+
+                    b.Property<int>("CinemaHallId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Rating")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3, 2)
+                        .HasColumnType("decimal(3,2)")
+                        .HasDefaultValue(0m)
+                        .HasAnnotation("Range", "0-5");
+
+                    b.Property<DateOnly>("ReleaseDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("MovieId");
+
+                    b.HasIndex("CinemaHallId");
+
+                    b.ToTable("Movies");
                 });
 
             modelBuilder.Entity("DAL.Models.Domain.Payment", b =>
@@ -210,44 +247,6 @@ namespace DAL.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Movie", b =>
-                {
-                    b.Property<int>("MovieId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MovieId"));
-
-                    b.Property<int>("CinemaHallId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Duration")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PosterPath")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("Rating")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(3, 2)
-                        .HasColumnType("decimal(3,2)")
-                        .HasDefaultValue(0m)
-                        .HasAnnotation("Range", "0-5");
-
-                    b.Property<DateOnly>("ReleaseDate")
-                        .HasColumnType("date");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("MovieId");
-
-                    b.HasIndex("CinemaHallId");
-
-                    b.ToTable("Movies");
-                });
-
             modelBuilder.Entity("MovieGenre", b =>
                 {
                     b.Property<int>("GenreId")
@@ -277,12 +276,23 @@ namespace DAL.Migrations
             modelBuilder.Entity("DAL.Models.Domain.CinemaHall", b =>
                 {
                     b.HasOne("DAL.Models.Domain.CinemaAddress", "CinemaAddress")
-                        .WithOne("CinemaHall")
-                        .HasForeignKey("DAL.Models.Domain.CinemaHall", "CinemaAddressId")
+                        .WithMany("CinemaHalls")
+                        .HasForeignKey("CinemaAddressId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("CinemaAddress");
+                });
+
+            modelBuilder.Entity("DAL.Models.Domain.Movie", b =>
+                {
+                    b.HasOne("DAL.Models.Domain.CinemaHall", "CinemaHall")
+                        .WithMany("Movies")
+                        .HasForeignKey("CinemaHallId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CinemaHall");
                 });
 
             modelBuilder.Entity("DAL.Models.Domain.Payment", b =>
@@ -304,7 +314,7 @@ namespace DAL.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Movie", "Movie")
+                    b.HasOne("DAL.Models.Domain.Movie", "Movie")
                         .WithMany("Screenings")
                         .HasForeignKey("MovieId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -326,17 +336,6 @@ namespace DAL.Migrations
                     b.Navigation("PostalCode");
                 });
 
-            modelBuilder.Entity("Movie", b =>
-                {
-                    b.HasOne("DAL.Models.Domain.CinemaHall", "CinemaHall")
-                        .WithMany("Movies")
-                        .HasForeignKey("CinemaHallId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CinemaHall");
-                });
-
             modelBuilder.Entity("MovieGenre", b =>
                 {
                     b.HasOne("DAL.Models.Domain.Genre", null)
@@ -345,7 +344,7 @@ namespace DAL.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Movie", null)
+                    b.HasOne("DAL.Models.Domain.Movie", null)
                         .WithMany()
                         .HasForeignKey("MovieId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -354,14 +353,18 @@ namespace DAL.Migrations
 
             modelBuilder.Entity("DAL.Models.Domain.CinemaAddress", b =>
                 {
-                    b.Navigation("CinemaHall")
-                        .IsRequired();
+                    b.Navigation("CinemaHalls");
                 });
 
             modelBuilder.Entity("DAL.Models.Domain.CinemaHall", b =>
                 {
                     b.Navigation("Movies");
 
+                    b.Navigation("Screenings");
+                });
+
+            modelBuilder.Entity("DAL.Models.Domain.Movie", b =>
+                {
                     b.Navigation("Screenings");
                 });
 
@@ -373,11 +376,6 @@ namespace DAL.Migrations
             modelBuilder.Entity("DAL.Models.Domain.User", b =>
                 {
                     b.Navigation("Payments");
-                });
-
-            modelBuilder.Entity("Movie", b =>
-                {
-                    b.Navigation("Screenings");
                 });
 #pragma warning restore 612, 618
         }

@@ -16,13 +16,14 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<MyDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ConnectionString"))
            .EnableDetailedErrors()
-           .EnableSensitiveDataLogging());// Register Repositories for Dependency Injection
+           .EnableSensitiveDataLogging());
 
-
+// Register Repositories for Dependency Injection
 builder.Services.AddScoped<IUserRepository, SQLUserRepository>();
-//builder.Services.AddScoped<IMovieRepository, SQLMovieRepository>();
+builder.Services.AddScoped<IMovieRepository, SQLMovieRepository>();
 builder.Services.AddScoped<IPostalCodeRepository, SQLPostalCodeRepository>();
 builder.Services.AddScoped<IGenreRepository, SQLGenreRepository>();
+builder.Services.AddScoped<ICinemaHallRepository, SQLCinemaHallRepository>(); // Added for CinemaHalls
 
 // Register AutoMapper profiles
 builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
